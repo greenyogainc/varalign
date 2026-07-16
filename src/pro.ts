@@ -1,12 +1,9 @@
-// Client for the license-gated Pro API (api.varalign.dev). The server verifies
-// the license and computes the work; this module only makes the call. A 402
-// means "no valid Pro license" — enforced server-side, so there is no local
-// toggle to flip. Only the two variable descriptors are sent — never the code.
-import * as http from 'http';
-import * as https from 'https';
-import * as vscode from 'vscode';
-
-const DEFAULT_PRO_API = 'https://api.varalign.dev';
+// Pro features, computed LOCALLY and gated by the OFFLINE license (see
+// license.ts / hasFeature). All-local: no server, no network, airgap-friendly.
+// The license can't be forged (Ed25519 — the private key never ships); a
+// source-patched bypass is a Business Source License violation. A server check
+// would break the airgap/local-first story, so offline enforcement is correct.
+import type { Side } from './core';
 
 export interface MergePlan {
   keep: { name: string; file: string; line: number };
@@ -17,51 +14,30 @@ export interface MergePlan {
   note: string;
 }
 
-/** Signals a 402 from the Pro API; carries the upgrade URL. */
-export class ProRequiredError extends Error {
-  constructor(public readonly upgrade: string) { super('Pro license required'); }
+function score(name: string): [number, number] {
+  const tokens = name.split(/[_.]|(?<=[a-z0-9])(?=[A-Z])/).filter(Boolean).length;
+  return [tokens, name.length];
 }
 
-function proApiBase(): string {
-  return (vscode.workspace.getConfiguration('varalign').get<string>('proApiUrl')
-    || DEFAULT_PRO_API).replace(/\/+$/, '');
-}
-
-export function requestMergePlan(a: unknown, b: unknown,
-                                 licenseKey: string): Promise<MergePlan> {
-  const url = new URL(proApiBase() + '/v1/pro/merge');
-  const payload = Buffer.from(JSON.stringify({ a, b }));
-  const mod = url.protocol === 'http:' ? http : https;
-  const opts: https.RequestOptions = {
-    method: 'POST',
-    hostname: url.hostname,
-    port: url.port || (url.protocol === 'http:' ? 80 : 443),
-    path: url.pathname,
-    headers: {
-      'Authorization': `Bearer ${licenseKey}`,
-      'Content-Type': 'application/json',
-      'Content-Length': payload.length,
-      'User-Agent': 'varalign-vscode',
-    },
+/** Plan the consolidation of a duplicate pair. Canonical = the more descriptive
+ *  name (more tokens, then longer, then lexical) so DATABASE_URL beats DB_URL,
+ *  deterministically — mirrors the engine's own rule. Pure/local; no I/O. */
+export function mergePlan(a: Side, b: Side): MergePlan {
+  const [sa, sb] = [score(a.name), score(b.name)];
+  let keep = a, drop = b;
+  const bWins = sb[0] > sa[0]
+    || (sb[0] === sa[0] && sb[1] > sa[1])
+    || (sb[0] === sa[0] && sb[1] === sa[1] && b.name < a.name);
+  if (bWins) { keep = b; drop = a; }
+  const conflict = (a.value ?? null) !== (b.value ?? null);
+  return {
+    keep: { name: keep.name, file: keep.file, line: keep.line },
+    drop: { name: drop.name, file: drop.file, line: drop.line },
+    rename: { from: drop.name, to: keep.name },
+    canonical_value: keep.value ?? null,
+    value_conflict: conflict,
+    note: `Keep "${keep.name}" (${keep.file}:${keep.line}); rewrite `
+      + `"${drop.name}" -> "${keep.name}" and remove its definition`
+      + (conflict ? '. Values differ -- review before applying.' : '.'),
   };
-  return new Promise((resolve, reject) => {
-    const req = mod.request(opts, res => {
-      const chunks: Buffer[] = [];
-      res.on('data', d => chunks.push(d));
-      res.on('end', () => {
-        const text = Buffer.concat(chunks).toString('utf-8');
-        let j: any = {};
-        try { j = text ? JSON.parse(text) : {}; } catch { /* non-JSON */ }
-        const code = res.statusCode || 0;
-        if (code === 200 && j.plan) { resolve(j.plan as MergePlan); }
-        else if (code === 402) {
-          reject(new ProRequiredError(j.upgrade || 'https://varalign.dev/pro'));
-        } else { reject(new Error(j.error || `merge failed (HTTP ${code})`)); }
-      });
-    });
-    req.on('error', e =>
-      reject(new Error(`cannot reach the VarAlign Pro API: ${e.message}`)));
-    req.write(payload);
-    req.end();
-  });
 }

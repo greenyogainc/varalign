@@ -393,30 +393,20 @@ function escapeRe(s: string): string {
 async function mergeVariables(item: any, store: Store): Promise<void> {
   const d: core.Dup | undefined = item?.dup;
   if (!d) { return; }
-  const key = vscode.workspace.getConfiguration('varalign')
-    .get<string>('licenseKey') || '';
-  const side = (s: core.Side) =>
-    ({ name: s.name, file: s.file, line: s.line, value: s.value });
-  let plan: pro.MergePlan;
-  try {
-    plan = await vscode.window.withProgress(
-      { location: vscode.ProgressLocation.Notification,
-        title: 'VarAlign: computing merge…' },
-      () => pro.requestMergePlan(side(d.a), side(d.b), key));
-  } catch (e: any) {
-    if (e instanceof pro.ProRequiredError) {
-      const pick = await vscode.window.showWarningMessage(
-        'Merge Variables is a VarAlign Pro feature.', 'Enter License', 'Get Pro');
-      if (pick === 'Enter License') {
-        vscode.commands.executeCommand('varalign.enterLicense');
-      } else if (pick === 'Get Pro') {
-        vscode.env.openExternal(vscode.Uri.parse(e.upgrade));
-      }
-      return;
+  // Offline Pro gate — verified locally (Ed25519 signature + expiry via the
+  // embedded public key). No server, works airgapped. Can't be forged; a
+  // source-patched bypass is a Business Source License violation.
+  if (!license.hasFeature('rename-assist')) {
+    const pick = await vscode.window.showWarningMessage(
+      'Merge Variables is a VarAlign Pro feature.', 'Enter License', 'Get Pro');
+    if (pick === 'Enter License') {
+      vscode.commands.executeCommand('varalign.enterLicense');
+    } else if (pick === 'Get Pro') {
+      vscode.env.openExternal(vscode.Uri.parse('https://varalign.dev/pro'));
     }
-    vscode.window.showErrorMessage(`VarAlign: ${e.message || e}`);
     return;
   }
+  const plan = pro.mergePlan(d.a, d.b);   // computed locally — no network
   const go = await vscode.window.showInformationMessage(
     plan.note, { modal: true }, 'Merge');
   if (go !== 'Merge') { return; }

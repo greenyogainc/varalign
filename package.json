@@ -1,8 +1,8 @@
 {
   "name": "varalign",
   "displayName": "VarAlign",
-  "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. Runs on the local VarAlign engine or your licensed VarAlign API.",
-  "version": "0.1.7",
+  "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. 100% local: your code never leaves your machine.",
+  "version": "0.1.9",
   "publisher": "greenyogainc",
   "license": "BUSL-1.1",
   "icon": "media/icon.png",
@@ -108,23 +108,22 @@
         "varalign.licenseKey": {
           "type": "string", "default": "",
           "markdownDescription": "VarAlign Pro/Team/Enterprise license key (`VL1.…`). Verified **offline** (Ed25519 signature + expiry, 14-day grace) — nothing is sent anywhere. Use **VarAlign: Enter License** to set it."
-        },
-        "varalign.proApiUrl": {
-          "type": "string", "default": "",
-          "markdownDescription": "Base URL of the VarAlign **Pro** API (default `https://api.varalign.dev`). The Pro API verifies your license server-side and computes gated features. Override only for a self-hosted Pro endpoint."
         }
       }
     }
   },
   "scripts": {
+    "check-types": "tsc --noEmit -p ./",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
+    "bundle": "node esbuild.js",
     "bundle-engine": "node ./scripts/bundle-engine.js",
-    "vscode:prepublish": "npm run compile && npm run bundle-engine"
+    "vscode:prepublish": "npm run check-types && npm run bundle -- --minify && npm run bundle-engine"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/vscode": "^1.85.0",
+    "esbuild": "^0.24.0",
     "typescript": "^5.4.0"
   }
 }

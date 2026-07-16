@@ -1,6 +1,7 @@
 .vscode/**
 src/**
 scripts/**
+esbuild.js
 node_modules/**
 .varmem/**
 tsconfig.json

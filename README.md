@@ -4,12 +4,13 @@
 
 # VarAlign
 
-[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/greenyogainc.varalign?label=VS%20Marketplace&color=0e7a3b)](https://marketplace.visualstudio.com/items?itemName=greenyogainc.varalign)
-[![Installs](https://img.shields.io/visual-studio-marketplace/i/greenyogainc.varalign?color=0e7a3b)](https://marketplace.visualstudio.com/items?itemName=greenyogainc.varalign)
 [![Open VSX](https://img.shields.io/open-vsx/v/greenyogainc/varalign?label=Open%20VSX&color=a60ee5)](https://open-vsx.org/extension/greenyogainc/varalign)
+[![Open VSX Downloads](https://img.shields.io/open-vsx/dt/greenyogainc/varalign?label=downloads&color=0e7a3b)](https://open-vsx.org/extension/greenyogainc/varalign)
 [![License: BSL 1.1](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
 
-**Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — right in your editor.**
+Also on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=greenyogainc.varalign).
+
+**Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — right in your editor. 100% local: your code never leaves your machine.**
 
 AI assistants forget. Across sessions they re-introduce a variable that already
 exists under another name, let a value drift from the one they wrote last week,
@@ -20,7 +21,8 @@ fix prompt.
 Native tree views — **Duplicates · Variables · Sessions** — over the VarAlign
 engine. Detection, scoring, and persistence run in a zero-dependency Python
 engine that ships *inside* the extension; the views are a thin, read-through
-client.
+client. Everything runs on your machine — no cloud, no telemetry, no code
+upload — so it works in locked-down and air-gapped environments.
 
 ## Features
 
@@ -34,6 +36,8 @@ client.
 - **Status bar** — `VarAlign: N high`; click to focus the Duplicates view.
 - **Generate Fix Prompt** — a repo-scoped remediation prompt in a new tab,
   ready to paste back to your assistant.
+- **Fix with AI** — hands a targeted consolidation prompt to Claude Code or
+  Kilo Code, whichever you have open.
 - Auto-refreshes when the store changes (a hook or the CLI wrote to it).
 
 ## Getting started
@@ -53,24 +57,16 @@ That's it — you're running locally, and every byte stays on your machine.
 > .varmem/
 > ```
 
-## Connect to a hosted API (optional, licensed)
+## VarAlign Pro
 
-You don't need this to try VarAlign — local mode above works out of the box, so
-test there first. When you're ready to read from a hosted VarAlign API instead of
-the bundled engine (your own deployment, or the cloud), fill in these settings.
-Point it at **your own** API to keep everything on your infrastructure:
+Pro unlocks **Merge Variables**: right-click a duplicate pair and VarAlign picks
+the canonical name, rewrites the references, and removes the duplicate
+definition — in your editor, on your machine.
 
-| Setting | Example | Meaning |
-|---|---|---|
-| `varalign.apiUrl` | `https://varalign.andrea-house.com` | base URL of the API — setting this switches to API mode |
-| `varalign.apiToken` | `vk_live_…` | bearer token / license key |
-| `varalign.apiProject` | `my-service` | project id (`/v1/projects/{id}`) |
-| `varalign.apiAllowInsecure` | `false` | skip TLS verify — only for a self-hosted internal CA |
-
-In API mode the views read `/v1/projects/{id}/report`; **Generate Fix Prompt**
-and **Reconcile** call the API. Review verdicts stay read-only over the API
-(dismiss/confirm on the machine that owns the project). When `apiUrl` is empty,
-VarAlign uses the bundled local engine.
+Licenses are verified **offline** (an Ed25519-signed key, checked locally with a
+14-day grace period past expiry — nothing is ever sent anywhere, so Pro works
+air-gapped too). Activate with **VarAlign: Enter License**; check anytime with
+**VarAlign: License Status**.
 
 ## Settings
 
@@ -80,10 +76,20 @@ VarAlign uses the bundled local engine.
 | `varalign.corePath` | *(bundled)* | path to `varmem.py`; empty = the bundled engine |
 | `varalign.minLevel` | `medium` | lowest duplicate level shown |
 | `varalign.showDismissed` | `false` | include dismissed / auto-quieted pairs |
-| `varalign.apiUrl` | `""` | hosted API base URL (see above) |
-| `varalign.apiToken` | `""` | API token / license key |
-| `varalign.apiProject` | `""` | project id on the API |
+| `varalign.aiTool` | `auto` | assistant for **Fix with AI** (`auto`/`claude`/`kilo`) |
+| `varalign.licenseKey` | `""` | Pro license key (`VL1.…`), verified offline |
+| `varalign.apiUrl` | `""` | optional self-hosted API (see below) |
+| `varalign.apiToken` | `""` | bearer token for that API |
+| `varalign.apiProject` | `""` | project id on that API |
 | `varalign.apiAllowInsecure` | `false` | skip TLS verify (internal CA only) |
+
+## Optional: read from a self-hosted API
+
+Teams that run the engine centrally (`python varmem.py serve` on their own
+infrastructure) can point the views at it by setting `varalign.apiUrl`,
+`varalign.apiToken`, and `varalign.apiProject`. The views then read
+`/v1/projects/{id}/report`; review verdicts stay read-only over the API. Leave
+`apiUrl` empty (the default) for the fully local experience.
 
 ## Development
 
@@ -93,7 +99,7 @@ npm install
 npm run compile   # press F5 for an Extension Development Host
 ```
 
-Build a `.vsix` (bundles the engine via `scripts/bundle-engine.js`):
+Build a `.vsix` (minified bundle + engine via `vscode:prepublish`):
 
 ```bash
 npx @vscode/vsce package
