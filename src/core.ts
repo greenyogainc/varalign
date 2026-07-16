@@ -151,7 +151,12 @@ export function run(root: string, args: string[]): Promise<string> {
   }
   return new Promise((resolve, reject) => {
     execFile(python, [core, '--project', root, ...args],
-      { maxBuffer: 128 * 1024 * 1024 },
+      {
+        maxBuffer: 128 * 1024 * 1024,
+        // Windows defaults Python stdio to cp1252, which cannot encode the
+        // arrows/dashes in prompts and reports — force UTF-8 end to end.
+        env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+      },
       (err, stdout, stderr) =>
         err ? reject(new Error((stderr || err.message).trim())) : resolve(stdout));
   });

@@ -2,7 +2,7 @@
   "name": "varalign",
   "displayName": "VarAlign",
   "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. 100% local: your code never leaves your machine.",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "publisher": "greenyogainc",
   "license": "BUSL-1.1",
   "icon": "media/icon.png",

@@ -39,6 +39,7 @@ function isDismissed(d: core.Dup): boolean {
 class Store {
   data: core.ReportData | null = null;
   error: string | null = null;
+  private readonly autoScanned = new Set<string>();
   private readonly _onChange = new vscode.EventEmitter<void>();
   readonly onChange = this._onChange.event;
 
@@ -56,6 +57,18 @@ class Store {
           + '"varalign.apiUrl" to read from a hosted API.');
       } else {
         this.data = await core.report(root);
+        // First open on a fresh repo: nothing tracked yet, so the views would
+        // sit silently empty. Run the baseline scan once automatically — the
+        // documented behavior ("open a repo and VarAlign scans it").
+        if (this.data && this.data.vars.length === 0
+            && !this.autoScanned.has(root)) {
+          this.autoScanned.add(root);
+          await vscode.window.withProgress(
+            { location: vscode.ProgressLocation.Notification,
+              title: 'VarAlign: first-run baseline scan…' },
+            () => core.scan(root));
+          this.data = await core.report(root);
+        }
       }
       this.error = null;
     } catch (e: any) {
@@ -94,6 +107,11 @@ class DuplicatesProvider implements vscode.TreeDataProvider<DupNode> {
     if (!el) {
       if (this.store.error) { return [{ t: 'msg', text: this.store.error }]; }
       const dups = this.visible();
+      if (this.store.data && dups.length === 0) {
+        return [{ t: 'msg', text: this.store.data.vars.length === 0
+          ? 'Nothing tracked yet — run "VarAlign: Full Rescan".'
+          : 'No duplicate suspects — you are aligned. ✔' }];
+      }
       return ['high', 'medium', 'low']
         .filter(lv => ORDER[lv] >= (ORDER[core.minLevel()] ?? 2)
           && dups.some(d => d.level === lv))
@@ -164,6 +182,9 @@ class VariablesProvider implements vscode.TreeDataProvider<VarNode> {
     const d = this.store.data;
     if (!el) {
       if (!d) { return this.store.error ? [{ t: 'msg', text: this.store.error }] : []; }
+      if (d.vars.length === 0) {
+        return [{ t: 'msg', text: 'Nothing tracked yet — run "VarAlign: Full Rescan".' }];
+      }
       const files = Array.from(new Set(d.vars.map(v => v.file))).sort();
       return files.map(file => ({ t: 'file', file } as VarNode));
     }
