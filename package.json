@@ -2,15 +2,15 @@
   "name": "varalign",
   "displayName": "VarAlign",
   "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. Runs on the local VarAlign engine or your licensed VarAlign API.",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "publisher": "greenyogainc",
   "license": "BUSL-1.1",
   "icon": "media/icon.png",
   "galleryBanner": { "color": "#0e1a24", "theme": "dark" },
   "keywords": ["ai", "duplicate variables", "drift", "refactor", "code quality", "claude", "copilot", "static analysis", "kilo"],
-  "repository": { "type": "git", "url": "https://github.com/andreab67/varalign.git" },
-  "bugs": { "url": "https://github.com/andreab67/varalign/issues" },
-  "homepage": "https://github.com/andreab67/varalign#readme",
+  "repository": { "type": "git", "url": "https://github.com/greenyogainc/varalign.git" },
+  "bugs": { "url": "https://github.com/greenyogainc/varalign/issues" },
+  "homepage": "https://github.com/greenyogainc/varalign#readme",
   "engines": { "vscode": "^1.85.0" },
   "categories": ["Linters", "AI", "Other"],
   "activationEvents": ["onStartupFinished"],
@@ -38,6 +38,7 @@
       { "command": "varalign.noteDup", "title": "Dismiss with note…" },
       { "command": "varalign.generatePrompt", "title": "VarAlign: Generate Fix Prompt", "icon": "$(sparkle)" },
       { "command": "varalign.fixWithAI", "title": "VarAlign: Fix with AI", "icon": "$(wand)" },
+      { "command": "varalign.mergeVariables", "title": "VarAlign: Merge Variables (Pro)", "icon": "$(git-merge)" },
       { "command": "varalign.enterLicense", "title": "VarAlign: Enter License" },
       { "command": "varalign.licenseStatus", "title": "VarAlign: License Status" },
       { "command": "varalign.setCorePath", "title": "VarAlign: Set core path (varmem.py)" }
@@ -51,10 +52,11 @@
         { "command": "varalign.rescan", "when": "view == varalign.variables", "group": "navigation@1" }
       ],
       "view/item/context": [
-        { "command": "varalign.fixWithAI", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@0" },
-        { "command": "varalign.dismissDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@1" },
-        { "command": "varalign.confirmDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@2" },
-        { "command": "varalign.noteDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@3" }
+        { "command": "varalign.mergeVariables", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@1" },
+        { "command": "varalign.fixWithAI", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@2" },
+        { "command": "varalign.dismissDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@1" },
+        { "command": "varalign.confirmDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@2" },
+        { "command": "varalign.noteDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@3" }
       ]
     },
     "configuration": {
@@ -106,6 +108,10 @@
         "varalign.licenseKey": {
           "type": "string", "default": "",
           "markdownDescription": "VarAlign Pro/Team/Enterprise license key (`VL1.…`). Verified **offline** (Ed25519 signature + expiry, 14-day grace) — nothing is sent anywhere. Use **VarAlign: Enter License** to set it."
+        },
+        "varalign.proApiUrl": {
+          "type": "string", "default": "",
+          "markdownDescription": "Base URL of the VarAlign **Pro** API (default `https://api.varalign.dev`). The Pro API verifies your license server-side and computes gated features. Override only for a self-hosted Pro endpoint."
         }
       }
     }

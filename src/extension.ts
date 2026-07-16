@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as core from './core';
 import * as license from './license';
+import * as pro from './pro';
 
 const ORDER: Record<string, number> = { high: 3, medium: 2, low: 1 };
 const LEVEL_ICON: Record<string, string> = {
@@ -380,6 +381,95 @@ async function fixWithAI(item: any): Promise<void> {
     + '(Ctrl+V) and send.');
 }
 
+// --------------------------------------------------- merge variables (Pro)
+
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Server-enforced Pro feature: ask the license-gated API for a merge plan
+// (only the two descriptors leave the machine), then apply it LOCALLY. A 402
+// means no valid license — there is no client-side toggle to flip.
+async function mergeVariables(item: any, store: Store): Promise<void> {
+  const d: core.Dup | undefined = item?.dup;
+  if (!d) { return; }
+  const key = vscode.workspace.getConfiguration('varalign')
+    .get<string>('licenseKey') || '';
+  const side = (s: core.Side) =>
+    ({ name: s.name, file: s.file, line: s.line, value: s.value });
+  let plan: pro.MergePlan;
+  try {
+    plan = await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification,
+        title: 'VarAlign: computing merge…' },
+      () => pro.requestMergePlan(side(d.a), side(d.b), key));
+  } catch (e: any) {
+    if (e instanceof pro.ProRequiredError) {
+      const pick = await vscode.window.showWarningMessage(
+        'Merge Variables is a VarAlign Pro feature.', 'Enter License', 'Get Pro');
+      if (pick === 'Enter License') {
+        vscode.commands.executeCommand('varalign.enterLicense');
+      } else if (pick === 'Get Pro') {
+        vscode.env.openExternal(vscode.Uri.parse(e.upgrade));
+      }
+      return;
+    }
+    vscode.window.showErrorMessage(`VarAlign: ${e.message || e}`);
+    return;
+  }
+  const go = await vscode.window.showInformationMessage(
+    plan.note, { modal: true }, 'Merge');
+  if (go !== 'Merge') { return; }
+  await applyMergePlan(plan, store);
+}
+
+async function applyMergePlan(plan: pro.MergePlan, store: Store): Promise<void> {
+  const root = workspaceRoot();
+  if (!root) { return; }
+  const uri = vscode.Uri.file(path.join(root, plan.drop.file));
+  try {
+    let doc = await vscode.workspace.openTextDocument(uri);
+    const lineNo = Math.max(0, (plan.drop.line || 1) - 1);
+    const col = doc.lineAt(lineNo).text.indexOf(plan.drop.name);
+    if (col < 0) {
+      throw new Error(`could not find ${plan.drop.name} at `
+        + `${plan.drop.file}:${plan.drop.line}`);
+    }
+    // rename every reference drop -> keep via the language's rename provider
+    const edit = await vscode.commands.executeCommand<vscode.WorkspaceEdit>(
+      'vscode.executeDocumentRenameProvider', uri,
+      new vscode.Position(lineNo, col), plan.rename.to);
+    let applied = false;
+    if (edit && edit.size > 0) { applied = await vscode.workspace.applyEdit(edit); }
+    if (!applied) {
+      // fallback: whole-word rename within the defining file only
+      const we = new vscode.WorkspaceEdit();
+      const re = new RegExp(`\\b${escapeRe(plan.drop.name)}\\b`, 'g');
+      for (let i = 0; i < doc.lineCount; i++) {
+        const t = doc.lineAt(i).text;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(t))) {
+          we.replace(uri, new vscode.Range(i, m.index,
+            i, m.index + plan.drop.name.length), plan.rename.to);
+        }
+      }
+      await vscode.workspace.applyEdit(we);
+      vscode.window.showWarningMessage(`VarAlign: renamed within ${plan.drop.file}`
+        + ' only (no rename provider) — check references in other files.');
+    }
+    // remove the now-duplicate definition line
+    doc = await vscode.workspace.openTextDocument(uri);
+    const del = new vscode.WorkspaceEdit();
+    del.delete(uri, doc.lineAt(lineNo).rangeIncludingLineBreak);
+    await vscode.workspace.applyEdit(del);
+    await doc.save();
+    vscode.window.showInformationMessage(`VarAlign: merged into ${plan.keep.name}.`);
+    store.refresh();
+  } catch (e: any) {
+    vscode.window.showErrorMessage(`VarAlign merge failed: ${e.message || e}`);
+  }
+}
+
 // ----------------------------------------------------------------- activate
 
 export function activate(ctx: vscode.ExtensionContext) {
@@ -447,6 +537,7 @@ export function activate(ctx: vscode.ExtensionContext) {
   }, 'Generating prompt…'));
 
   reg('varalign.fixWithAI', (item: any) => fixWithAI(item));
+  reg('varalign.mergeVariables', (item: any) => mergeVariables(item, store));
 
   reg('varalign.enterLicense', async () => {
     const key = await vscode.window.showInputBox({
