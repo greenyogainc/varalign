@@ -4,6 +4,11 @@
 
 # VarAlign
 
+[![VS Marketplace](https://img.shields.io/visual-studio-marketplace/v/greenyogainc.varalign?label=VS%20Marketplace&color=0e7a3b)](https://marketplace.visualstudio.com/items?itemName=greenyogainc.varalign)
+[![Installs](https://img.shields.io/visual-studio-marketplace/i/greenyogainc.varalign?color=0e7a3b)](https://marketplace.visualstudio.com/items?itemName=greenyogainc.varalign)
+[![Open VSX](https://img.shields.io/open-vsx/v/greenyogainc/varalign?label=Open%20VSX&color=a60ee5)](https://open-vsx.org/extension/greenyogainc/varalign)
+[![License: BSL 1.1](https://img.shields.io/badge/license-BSL%201.1-blue)](LICENSE)
+
 **Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — right in your editor.**
 
 AI assistants forget. Across sessions they re-introduce a variable that already
