@@ -169,6 +169,10 @@ export async function report(root: string): Promise<ReportData> {
   return JSON.parse(await run(root, ['report', '--json']));
 }
 
+export async function ignoreName(root: string, names: string[]): Promise<void> {
+  await run(root, ['ignore-name', ...names]);
+}
+
 export async function prompt(root: string): Promise<string> {
   if (apiMode()) {
     const r = await apiRequest('POST', 'prompt', { min_level: minLevel() });

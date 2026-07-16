@@ -2,7 +2,7 @@
   "name": "varalign",
   "displayName": "VarAlign",
   "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. 100% local: your code never leaves your machine.",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "publisher": "greenyogainc",
   "license": "BUSL-1.1",
   "icon": "media/icon.png",
@@ -36,6 +36,8 @@
       { "command": "varalign.dismissDup", "title": "Dismiss (not a duplicate)" },
       { "command": "varalign.confirmDup", "title": "Confirm duplicate" },
       { "command": "varalign.noteDup", "title": "Dismiss with note…" },
+      { "command": "varalign.ignoreName", "title": "Never flag this name (ignore everywhere)" },
+      { "command": "varalign.dismissLevel", "title": "Dismiss all in this group" },
       { "command": "varalign.generatePrompt", "title": "VarAlign: Generate Fix Prompt", "icon": "$(sparkle)" },
       { "command": "varalign.fixWithAI", "title": "VarAlign: Fix with AI", "icon": "$(wand)" },
       { "command": "varalign.mergeVariables", "title": "VarAlign: Merge Variables (Pro)", "icon": "$(git-merge)" },
@@ -56,7 +58,9 @@
         { "command": "varalign.fixWithAI", "when": "view == varalign.duplicates && viewItem == dup", "group": "1@2" },
         { "command": "varalign.dismissDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@1" },
         { "command": "varalign.confirmDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@2" },
-        { "command": "varalign.noteDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@3" }
+        { "command": "varalign.noteDup", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@3" },
+        { "command": "varalign.ignoreName", "when": "view == varalign.duplicates && viewItem == dup", "group": "2@4" },
+        { "command": "varalign.dismissLevel", "when": "view == varalign.duplicates && viewItem == level", "group": "1@1" }
       ]
     },
     "configuration": {

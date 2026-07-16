@@ -94,7 +94,7 @@ class DuplicatesProvider implements vscode.TreeDataProvider<DupNode> {
     store.onChange(() => this._emitter.fire());
   }
 
-  private visible(): core.Dup[] {
+  visible(): core.Dup[] {
     const d = this.store.data;
     if (!d) { return []; }
     const floor = ORDER[core.minLevel()] ?? 2;
@@ -491,8 +491,8 @@ export function activate(ctx: vscode.ExtensionContext) {
   statusBar.command = 'varalign.duplicates.focus';
   ctx.subscriptions.push(statusBar);
 
-  vscode.window.registerTreeDataProvider('varalign.duplicates',
-    new DuplicatesProvider(store));
+  const dupProvider = new DuplicatesProvider(store);
+  vscode.window.registerTreeDataProvider('varalign.duplicates', dupProvider);
   vscode.window.registerTreeDataProvider('varalign.variables',
     new VariablesProvider(store));
   vscode.window.registerTreeDataProvider('varalign.sessions',
@@ -533,6 +533,42 @@ export function activate(ctx: vscode.ExtensionContext) {
   verdictCmd('varalign.dismissDup', 'not_duplicate', false);
   verdictCmd('varalign.confirmDup', 'duplicate', false);
   verdictCmd('varalign.noteDup', 'not_duplicate', true);
+
+  // Bulk quiet: one action instead of one dismissal per pair.
+  reg('varalign.ignoreName', async (item: any) => {
+    const d: core.Dup | undefined = item?.dup;
+    const root = workspaceRoot();
+    if (!d || !root) { return; }
+    const names = Array.from(new Set([d.a.name, d.b.name]));
+    const go = await vscode.window.showWarningMessage(
+      `Never flag ${names.join(' / ')} again in this repo? Every current and `
+      + 'future duplicate pair on the name is suppressed.',
+      { modal: true }, 'Ignore everywhere');
+    if (go !== 'Ignore everywhere') { return; }
+    await reload(store, r => core.ignoreName(r, names), 'Updating ignore list…');
+  });
+
+  reg('varalign.dismissLevel', async (item: any) => {
+    const level: string | undefined = item?.level;
+    const root = workspaceRoot();
+    if (!level || !root) { return; }
+    const targets = dupProvider.visible()
+      .filter(d => d.level === level && !isDismissed(d));
+    if (targets.length === 0) { return; }
+    const go = await vscode.window.showWarningMessage(
+      `Dismiss all ${targets.length} ${level.toUpperCase()} pairs as `
+      + 'not-duplicates?', { modal: true }, 'Dismiss all');
+    if (go !== 'Dismiss all') { return; }
+    await vscode.window.withProgress(
+      { location: vscode.ProgressLocation.Notification,
+        title: `VarAlign: dismissing ${targets.length} pairs…` },
+      async () => {
+        for (const d of targets) {
+          await core.dupNote(root, d.pair_key, 'not_duplicate');
+        }
+      });
+    await store.refresh();
+  });
 
   reg('varalign.toggleDismissed', async () => {
     const c = vscode.workspace.getConfiguration('varalign');
