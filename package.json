@@ -1,0 +1,242 @@
+{
+  "name": "varalign",
+  "displayName": "VarAlign",
+  "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions \u00e2\u20ac\u201d duplicate detection, drift tracking, and one-click fix prompts, in your editor. Runs on the local VarAlign engine or your licensed VarAlign API.",
+  "version": "0.1.4",
+  "publisher": "greenyogainc",
+  "license": "BUSL-1.1",
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andreab67/varalign.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "varalign",
+          "title": "VarAlign",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "varalign": [
+        {
+          "id": "varalign.duplicates",
+          "name": "Duplicates"
+        },
+        {
+          "id": "varalign.variables",
+          "name": "Variables"
+        },
+        {
+          "id": "varalign.sessions",
+          "name": "Sessions"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "varalign.refresh",
+        "title": "VarAlign: Refresh",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "varalign.rescan",
+        "title": "VarAlign: Full Rescan",
+        "icon": "$(search)"
+      },
+      {
+        "command": "varalign.reconcile",
+        "title": "VarAlign: Reconcile"
+      },
+      {
+        "command": "varalign.toggleDismissed",
+        "title": "VarAlign: Toggle Dismissed",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "varalign.dismissDup",
+        "title": "Dismiss (not a duplicate)"
+      },
+      {
+        "command": "varalign.confirmDup",
+        "title": "Confirm duplicate"
+      },
+      {
+        "command": "varalign.noteDup",
+        "title": "Dismiss with note\u00e2\u20ac\u00a6"
+      },
+      {
+        "command": "varalign.generatePrompt",
+        "title": "VarAlign: Generate Fix Prompt",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "varalign.fixWithAI",
+        "title": "VarAlign: Fix with AI",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "varalign.enterLicense",
+        "title": "VarAlign: Enter License"
+      },
+      {
+        "command": "varalign.licenseStatus",
+        "title": "VarAlign: License Status"
+      },
+      {
+        "command": "varalign.setCorePath",
+        "title": "VarAlign: Set core path (varmem.py)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "varalign.refresh",
+          "when": "view == varalign.duplicates",
+          "group": "navigation@1"
+        },
+        {
+          "command": "varalign.toggleDismissed",
+          "when": "view == varalign.duplicates",
+          "group": "navigation@2"
+        },
+        {
+          "command": "varalign.generatePrompt",
+          "when": "view == varalign.duplicates",
+          "group": "navigation@3"
+        },
+        {
+          "command": "varalign.fixWithAI",
+          "when": "view == varalign.duplicates",
+          "group": "navigation@4"
+        },
+        {
+          "command": "varalign.rescan",
+          "when": "view == varalign.variables",
+          "group": "navigation@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "varalign.fixWithAI",
+          "when": "view == varalign.duplicates && viewItem == dup",
+          "group": "1@0"
+        },
+        {
+          "command": "varalign.dismissDup",
+          "when": "view == varalign.duplicates && viewItem == dup",
+          "group": "1@1"
+        },
+        {
+          "command": "varalign.confirmDup",
+          "when": "view == varalign.duplicates && viewItem == dup",
+          "group": "1@2"
+        },
+        {
+          "command": "varalign.noteDup",
+          "when": "view == varalign.duplicates && viewItem == dup",
+          "group": "1@3"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "VarAlign",
+      "properties": {
+        "varalign.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "description": "Python interpreter used to run the VarAlign core."
+        },
+        "varalign.corePath": {
+          "type": "string",
+          "default": "",
+          "description": "Absolute path to varmem.py (the local VarAlign engine). Leave empty to use the engine bundled with the extension (needs only Python on PATH)."
+        },
+        "varalign.minLevel": {
+          "type": "string",
+          "enum": [
+            "high",
+            "medium",
+            "low"
+          ],
+          "default": "medium",
+          "description": "Lowest duplicate confidence to show in the Duplicates view."
+        },
+        "varalign.showDismissed": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show dismissed and auto-quieted duplicate pairs."
+        },
+        "varalign.apiUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Base URL of a hosted **VarAlign API** to read from instead of the local core \u00e2\u20ac\u201d e.g. `https://varalign.andrea-house.com` (your own deployment) or the cloud endpoint. Leave empty to use the local `varmem.py`. Requires a license key in `#varalign.apiToken#`."
+        },
+        "varalign.apiToken": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Bearer token / **license key** for the VarAlign API. Used only when `#varalign.apiUrl#` is set. Treated as a secret \u00e2\u20ac\u201d do not commit it to a shared settings file."
+        },
+        "varalign.apiProject": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Project id on the VarAlign API to read (the `{id}` in `/v1/projects/{id}`). Required when `#varalign.apiUrl#` is set."
+        },
+        "varalign.apiAllowInsecure": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Skip TLS certificate verification when calling `#varalign.apiUrl#`. Enable **only** for a self-hosted internal API served with a private CA that this machine does not already trust."
+        },
+        "varalign.aiTool": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "claude",
+            "kilo"
+          ],
+          "enumDescriptions": [
+            "Use whichever supported assistant is loaded; if several, the first available.",
+            "Always route to Claude Code (anthropic.claude-code).",
+            "Always route to Kilo Code (kilocode.kilo-code)."
+          ],
+          "default": "auto",
+          "markdownDescription": "Which AI assistant **Fix with AI** hands the remediation prompt to. `auto` prefers an already-active assistant."
+        },
+        "varalign.licenseKey": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "VarAlign Pro/Team/Enterprise license key (`VL1.\u00e2\u20ac\u00a6`). Verified **offline** (Ed25519 signature + expiry, 14-day grace) \u00e2\u20ac\u201d nothing is sent anywhere. Use **VarAlign: Enter License** to set it."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "bundle-engine": "node ./scripts/bundle-engine.js",
+    "vscode:prepublish": "npm run compile && npm run bundle-engine"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.0"
+  },
+  "bugs": {
+    "url": "https://github.com/andreab67/varalign/issues"
+  },
+  "homepage": "https://github.com/andreab67/varalign#readme"
+}

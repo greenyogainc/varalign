@@ -1,0 +1,5 @@
+node_modules/
+out/
+*.vsix
+# bundled Python engine — assembled at package time (scripts/bundle-engine.js)
+engine/

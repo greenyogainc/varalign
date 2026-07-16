@@ -1,0 +1,13 @@
+.vscode/**
+src/**
+scripts/**
+node_modules/**
+.varmem/**
+tsconfig.json
+package-lock.json
+**/*.map
+**/*.ts
+**/__pycache__/**
+**/*.pyc
+.gitignore
+*.vsix
