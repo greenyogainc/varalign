@@ -12,6 +12,8 @@ Also on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?ite
 
 **Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — right in your editor. 100% local: your code never leaves your machine.**
 
+![VarAlign demo: duplicates detected, a pair reviewed and dismissed, and a fix prompt generated — all in VS Code](https://greenyogainc.com/images/varalign/demo.gif)
+
 AI assistants forget. Across sessions they re-introduce a variable that already
 exists under another name, let a value drift from the one they wrote last week,
 or strand a definition when a file moves. VarAlign tracks every assignment your
