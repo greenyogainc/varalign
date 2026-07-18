@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "varalign",
+  "displayName": "VarAlign",
+  "version": "1.0.0",
+  "description": "Tracks every variable Claude Code writes, remembers it across sessions, and flags duplicate/misaligned variables (MAX_RETRIES vs RETRY_LIMIT, drifted connection strings, etc.) with a scored, color-coded report.",
+  "author": { "name": "Green Yoga Inc", "email": "andreab@greenyogainc.com" },
+  "homepage": "https://greenyogainc.com/varalign",
+  "license": "Apache-2.0",
+  "keywords": ["variables", "duplicate-detection", "code-review", "memory"]
+}

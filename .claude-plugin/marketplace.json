@@ -1,0 +1,12 @@
+{
+  "name": "varalign",
+  "owner": { "name": "Green Yoga Inc", "email": "andreab@greenyogainc.com" },
+  "description": "VarAlign — variable memory and duplicate/misalignment detection for Claude Code.",
+  "plugins": [
+    {
+      "name": "varalign",
+      "source": "./",
+      "description": "Captures variable writes and flags duplicate-concept drift across the repo."
+    }
+  ]
+}
