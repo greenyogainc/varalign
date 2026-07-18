@@ -2,7 +2,7 @@
   "name": "varalign",
   "displayName": "VarAlign",
   "description": "Catch the duplicate, drifted, and misaligned variables AI coding agents scatter across sessions — duplicate detection, drift tracking, and one-click fix prompts, in your editor. 100% local: your code never leaves your machine.",
-  "version": "0.1.13",
+  "version": "1.0.0",
   "publisher": "greenyogainc",
   "license": "BUSL-1.1",
   "icon": "media/icon.png",
@@ -84,7 +84,7 @@
         },
         "varalign.apiUrl": {
           "type": "string", "default": "",
-          "markdownDescription": "Base URL of a hosted **VarAlign API** to read from instead of the local core — e.g. `https://varalign.andrea-house.com` (your own deployment) or the cloud endpoint. Leave empty to use the local `varmem.py`. Requires a license key in `#varalign.apiToken#`."
+          "markdownDescription": "Base URL of a hosted **VarAlign API** to read from instead of the local core — e.g. `https://varalign.your-domain.example` (your own deployment) or the cloud endpoint. Leave empty to use the local `varmem.py`. Requires a license key in `#varalign.apiToken#`."
         },
         "varalign.apiToken": {
           "type": "string", "default": "",
@@ -122,7 +122,8 @@
     "watch": "tsc -watch -p ./",
     "bundle": "node esbuild.js",
     "bundle-engine": "node ./scripts/bundle-engine.js",
-    "vscode:prepublish": "npm run check-types && npm run bundle -- --minify && npm run bundle-engine"
+    "build-faq": "node ./scripts/build-faq.js",
+    "vscode:prepublish": "npm run build-faq && npm run check-types && npm run bundle -- --minify && npm run bundle-engine"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

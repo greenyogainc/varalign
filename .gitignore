@@ -1,5 +1,17 @@
+# Python (engine)
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node (extension/)
 node_modules/
 out/
 *.vsix
 # bundled Python engine — assembled at package time (scripts/bundle-engine.js)
 engine/
+
+
+# varmem runtime data (created if you run the engine in this repo itself)
+.varmem/

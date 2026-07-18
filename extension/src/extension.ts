@@ -301,10 +301,11 @@ function updateStatusBar(store: Store) {
   const via = core.apiMode() ? ` · via ${core.backend()}` : '';
   const lic = license.currentLicense();
   const tier = lic.valid ? (lic.tier || 'pro').toUpperCase() : 'Free';
+  const eng = d && d.engine ? ` · engine ${d.engine.version}@${d.engine.build}` : '';
   statusBar.text = d ? `$(shield) VarAlign: ${hi} high` : '$(shield) VarAlign';
   statusBar.tooltip = d
     ? `VarAlign ${tier} · ${hi} high · ${med} medium duplicate suspects `
-      + `— click to open${via}`
+      + `— click to open${via}${eng}`
     : (store.error || `VarAlign ${tier}`);
   statusBar.show();
 }
@@ -648,6 +649,32 @@ export function activate(ctx: vscode.ExtensionContext) {
     watcher.onDidChange(bump); watcher.onDidCreate(bump);
     watcher.onDidDelete(bump);
     ctx.subscriptions.push(watcher);
+
+    // auto-reconcile when SOURCE files change, so a duplicate/drift the user
+    // just FIXED clears from the views without a manual rescan. The .varmem
+    // watcher above only re-reads the index — nothing re-derived it from the
+    // edited code unless a capture hook happened to fire. This catches edits
+    // from any source (manual, or agents that write files directly).
+    // Debounced, mtime-fast (non-forced), and failure-swallowed so it never
+    // disrupts editing. (excludes vendored/build/registry dirs)
+    const EXCLUDED =
+      /[/\\](?:node_modules|\.git|\.varmem|\.venv|venv|dist|build|out|__pycache__)[/\\]/;
+    let reconcileTimer: ReturnType<typeof setTimeout> | undefined;
+    const scheduleReconcile = (uri: vscode.Uri) => {
+      if (EXCLUDED.test(uri.fsPath)) { return; }
+      if (reconcileTimer) { clearTimeout(reconcileTimer); }
+      reconcileTimer = setTimeout(async () => {
+        try { await core.reconcile(root, false); } catch { /* never disrupt editing */ }
+        await store.refresh();
+      }, 2000);
+    };
+    const srcWatcher = vscode.workspace.createFileSystemWatcher(
+      new vscode.RelativePattern(root,
+        '**/*.{py,pyi,js,jsx,mjs,cjs,ts,tsx,sh,bash,ps1,psm1}'));
+    srcWatcher.onDidChange(scheduleReconcile);
+    srcWatcher.onDidCreate(scheduleReconcile);
+    srcWatcher.onDidDelete(scheduleReconcile);
+    ctx.subscriptions.push(srcWatcher);
   }
   vscode.workspace.onDidChangeConfiguration(e => {
     if (e.affectsConfiguration('varalign')) { store.refresh(); }

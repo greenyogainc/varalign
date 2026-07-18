@@ -30,6 +30,7 @@ export interface ReportData {
   levelCounts: Record<string, number>;
   unreviewedLevels?: Record<string, number>;
   learnedSuppressed?: number;
+  engine?: { version: string; build: string };
 }
 
 function config() {
@@ -189,9 +190,11 @@ export async function scan(root: string): Promise<void> {
   await run(root, ['scan']);
 }
 
-export async function reconcile(root: string): Promise<void> {
+export async function reconcile(root: string, force = true): Promise<void> {
   if (apiMode()) { await apiRequest('POST', 'reconcile'); return; }
-  await run(root, ['reconcile', '--force']);
+  // force=false uses the mtime fast-path (only re-checks files that changed) —
+  // cheap enough to run on every source-file save from the live watcher.
+  await run(root, force ? ['reconcile', '--force'] : ['reconcile']);
 }
 
 export async function dupNote(root: string, pairKey: string, verdict: string,
